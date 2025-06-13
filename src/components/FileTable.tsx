@@ -1,4 +1,3 @@
-
 import { FC } from "react";
 import {
   Table,
@@ -9,26 +8,28 @@ import {
 } from "./ui/table";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFilePagination } from "@/hooks/useFilePagination";
-import { useDocuments } from "@/hooks/useDocuments";
 import FileTableContent from "./files/FileTableContent";
 import FilePagination from "./files/FilePagination";
 import ResultsHeader from "./files/ResultsHeader";
+import { FileData } from "@/types/file"; // Importe o tipo FileData
 
+// ✅ 1. A tabela agora recebe 'data' e 'isLoading' como props
 interface FileTableProps {
-  type: string;
-  searchFilter: string;
+  data: FileData[];
+  isLoading: boolean;
   searchTerm: string;
 }
 
-const FileTable: FC<FileTableProps> = ({ type, searchFilter, searchTerm }) => {
+const FileTable: FC<FileTableProps> = ({ data, isLoading, searchTerm }) => {
   const { user } = useAuth();
-  
   const hasMeiAccess = user?.services?.includes('mei') || false;
   const hasCnpjAccess = user?.services?.includes('cnpj') || false;
   
-  const { data, isLoading } = useDocuments(type, hasMeiAccess, hasCnpjAccess);
+  // ✅ 2. O hook 'useDocuments' foi removido daqui
+
+  // A paginação agora usa os dados recebidos via props
   const { paginatedData, filteredData, currentPage, totalPages, handlePageChange } = 
-    useFilePagination(data, searchFilter, searchTerm);
+    useFilePagination(data, "name", searchTerm); // "name" como filtro padrão, ajuste se necessário
 
   return (
     <div className="w-full space-y-4">

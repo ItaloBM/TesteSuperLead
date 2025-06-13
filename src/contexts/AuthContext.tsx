@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api, { setBaseUrl } from "@/services/axios";
-import { authService, cnpjService } from "@/services";
+import { authService, documentService } from "@/services"; // Agora a importação funcionará corretamente
 
 interface User {
   name: string;
@@ -43,11 +43,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const fetchBalance = async () => {
-    // Adicionamos uma verificação: só busca o saldo se houver um usuário
     if (!localStorage.getItem("user") && !user) return; 
 
     try {
-      const response = await cnpjService.getBalance();
+      const response = await documentService.getBalance();
       setBalance(response.message.total_balance);
     } catch (err) {
       console.error("Falha ao buscar saldo:", err);
@@ -66,12 +65,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const { authenticated, user: sessionUser } = await authService.checkAuth();
         if (authenticated && sessionUser) {
           setUser(sessionUser);
-          await fetchBalance(); // Busca saldo para usuário da sessão
+          await fetchBalance();
         } else {
           const storedUser = localStorage.getItem("user");
           if (storedUser) {
             setUser(JSON.parse(storedUser));
-            await fetchBalance(); // ✅ CORREÇÃO: Busca saldo também para usuário do localStorage
+            await fetchBalance();
           }
         }
       } catch (err) {
@@ -122,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setUser(null);
       setBalance(null);
-      localStorage.clear(); // Limpa todo o localStorage para garantir
+      localStorage.clear();
       toast.success("Você foi desconectado com sucesso!");
       navigate("/login");
       setIsLoading(false);

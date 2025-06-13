@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -26,10 +25,12 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#0d62d0",
+          DEFAULT: "#015360",
           foreground: "#FFFFFF",
           hover: "#0d62d0"
         },
+        // ✅ NOVA COR ADICIONADA AQUI
+        "superlead-pro": "#015360",
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",

@@ -1,11 +1,9 @@
-// Arquivo: src/components/Header.tsx (AJUSTADO)
-
 import { useAuth } from "@/contexts/AuthContext";
 import { Coins, LogOut, User as UserIcon } from "lucide-react"; // Ícones para a UI
 import { Button } from "./ui/button";
 
 const Header = () => {
-  // ✅ Pega o usuário, saldo e função de logout do contexto de autenticação
+  // Pega o usuário, saldo e função de logout do contexto de autenticação
   const { user, balance, logout, isLoading } = useAuth();
 
   return (
@@ -13,7 +11,7 @@ const Header = () => {
       <div className="container mx-auto flex justify-between items-center p-4">
         {/* Logo */}
         <div className="text-2xl font-bold text-gray-800">
-          SuperLead<span className="text-blue-600">Pro</span>
+          SuperLead<span className="text-superlead-pro">Pro</span>
         </div>
 
         {/* Informações do Usuário e Saldo */}
@@ -24,7 +22,8 @@ const Header = () => {
             <div className="bg-gray-200 h-9 w-28 rounded-lg animate-pulse"></div>
           ) : (
             balance !== null && (
-              <div className="flex items-center gap-2 bg-blue-100 text-blue-800 font-semibold px-4 py-2 rounded-lg text-sm">
+              // ✅ LINHA ALTERADA AQUI
+              <div className="flex items-center gap-2 bg-[#015360]/10 text-[#015360] font-semibold px-4 py-2 rounded-lg text-sm">
                 <Coins className="w-5 h-5" />
                 <span>Saldo: {balance.toLocaleString('pt-BR')}</span>
               </div>
