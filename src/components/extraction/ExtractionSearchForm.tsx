@@ -12,16 +12,21 @@ import { DatePicker } from "./DatePicker";
 import { SearchConfirmationDialog } from "./SearchConfirmationDialog";
 import { SendEmailDialog } from "./SendEmailDialog";
 import AutocompleteInput from '@/components/AutocompleteInput';
+import MultiTagInput from './MultiTagInput';
 
 // Hooks, Constantes, Tipos e Serviços
 import { useToast } from "@/hooks/use-toast";
 import { brazilianStates } from "@/constants/states";
 import { documentService } from "@/services";
 import { FileData } from "@/types/file";
+import { Link2Icon } from "lucide-react"; 
 
 // Interfaces
 interface ExtractionFormData {
-  companyName: string; mainActivity: string; legalNature: string; status: string;
+  companyName: string; 
+  mainActivity: string[];
+  legalNature: string; 
+  status: string;
   state: string; city: string; neighborhood: string; zipCode: string; ddd: string;
   openingDateFrom: Date | undefined; openingDateTo: Date | undefined;
   capitalFrom: string; capitalTo: string;
@@ -34,14 +39,13 @@ interface ExtractionSearchFormProps {
   setIsLoading: (isLoading: boolean) => void;
 }
 
-// Função auxiliar para criar o payload da API
 const createApiPayload = (formData: ExtractionFormData) => {
     const formatDateForApi = (date: Date | undefined) => date ? format(date, 'yyyy-MM-dd') : undefined;
     const formatNumber = (value: string | undefined) => (value ? parseFloat(value.replace(',', '.')) : 0) || 0;
-
-    const payload = {
+    
+    const payload: any = {
         busca_textual: formData.companyName ? [{ texto: [formData.companyName], razao_social: true, nome_fantasia: true }] : undefined,
-        codigo_atividade_principal: formData.mainActivity ? [formData.mainActivity] : undefined,
+        codigo_atividade_principal: formData.mainActivity && formData.mainActivity.length > 0 ? formData.mainActivity : undefined,
         codigo_natureza_juridica: formData.legalNature ? [formData.legalNature] : undefined,
         situacao_cadastral: formData.status ? [formData.status] : undefined,
         uf: formData.state ? [formData.state] : undefined,
@@ -60,13 +64,11 @@ const createApiPayload = (formData: ExtractionFormData) => {
         limite: 50, pagina: 0,
     };
     
-    // Remove chaves undefined para não enviar dados desnecessários
     Object.keys(payload).forEach(key => {
-      if (payload[key as keyof typeof payload] === undefined) {
+      if (payload[key as keyof typeof payload] === undefined || (Array.isArray(payload[key as keyof typeof payload]) && payload[key as keyof typeof payload].length === 0)) {
         delete payload[key as keyof typeof payload];
       }
     });
-
     return payload;
 };
 
@@ -74,21 +76,37 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
+
   const form = useForm<ExtractionFormData>({
-    defaultValues: { /* Seus valores padrão */ },
+    defaultValues: {
+      companyName: "",
+      mainActivity: [],
+      legalNature: "", 
+      status: "",
+      state: "", city: "", neighborhood: "", zipCode: "", ddd: "",
+      capitalFrom: "", capitalTo: "",
+      openingDateFrom: undefined, openingDateTo: undefined,
+      onlyMei: false, excludeMei: false, onlyMatrix: false, onlyBranch: false,
+      withPhone: false, onlyLandline: false, onlyMobile: false, withEmail: false,
+    },
   });
 
   const handleConfirmSearch = async () => {
     setShowConfirmDialog(false);
+    setIsSearching(true);
     setIsLoading(true);
     const apiPayload = createApiPayload(form.getValues());
+
     try {
       const response = await documentService.startCnpjQuery(apiPayload);
       const results = response.responseData?.cnpjs || [];
       const formattedResults: FileData[] = results.map((cnpj: any) => ({
-        id: cnpj.cnpj, name: cnpj.razao_social || 'Nome não informado',
-        lastModified: new Date().toLocaleDateString('pt-BR'), date: cnpj.data_abertura ? new Date(cnpj.data_abertura).toLocaleDateString('pt-BR') : '-',
+        id: cnpj.cnpj,
+        name: cnpj.razao_social || 'Nome não informado',
+        lastModified: new Date().toLocaleDateString('pt-BR'),
+        date: cnpj.data_abertura ? new Date(cnpj.data_abertura).toLocaleDateString('pt-BR') : '-',
         type: 'cnpj',
       }));
       toast({ title: "Busca concluída!", description: `${formattedResults.length} resultados foram encontrados.` });
@@ -99,6 +117,7 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
       toast({ title: "Erro ao iniciar a busca", description: `Erro ${error.response?.status}: ${errorMessage}`, variant: "destructive" });
       onSearchCompleted([]);
     } finally {
+      setIsSearching(false);
       setIsLoading(false);
     }
   };
@@ -134,9 +153,45 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Razão Social ou Nome Fantasia</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar empresas..." fetchSuggestions={documentService.fetchEmpresaSuggestions} /></FormControl></FormItem>)}/>
-            <FormField control={form.control} name="mainActivity" render={({ field }) => (<FormItem><FormLabel>Atividade Principal (CNAE)</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar atividades..." fetchSuggestions={documentService.fetchCnaeSuggestions} /></FormControl></FormItem>)}/>
-            <FormField control={form.control} name="legalNature" render={({ field }) => ( <FormItem><FormLabel>Natureza Jurídica</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar naturezas..." fetchSuggestions={documentService.fetchNaturezaJuridicaSuggestions} /></FormControl></FormItem>)}/>
+            
+            <FormField
+              control={form.control}
+              name="mainActivity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atividade Principal (CNAE)</FormLabel>
+                  <FormControl>
+                    <MultiTagInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Digite um CNAE e clique em Adicionar"
+                    />
+                  </FormControl>
+                  <a 
+                    href="#" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                  >
+                    <Link2Icon className="h-3 w-3" />
+                    Consultar códigos CNAE
+                  </a>
+                </FormItem>
+              )}
+            />
+            
+            <FormField control={form.control} name="legalNature" render={({ field }) => ( <FormItem><FormLabel>Natureza Jurídica</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar naturezas..." fetchSuggestions={documentService.fetchNaturezaJuridicaSuggestions} /></FormControl><a 
+                    href="#" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-1"
+                  >
+                    <Link2Icon className="h-3 w-3" />
+                    Consultar códigos de Natureza Jurídica
+                  </a></FormItem>)}/>
+            
           </div>
+
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <FormField control={form.control} name="status" render={({ field }) => ( <FormItem><FormLabel>Situação Cadastral</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger></FormControl><SelectContent><SelectItem value="ativa">Ativa</SelectItem><SelectItem value="baixada">Baixada</SelectItem><SelectItem value="inapta">Inapta</SelectItem><SelectItem value="suspensa">Suspensa</SelectItem><SelectItem value="nula">Nula</SelectItem></SelectContent></Select></FormItem>)}/>
             <FormField control={form.control} name="state" render={({ field }) => (<FormItem><FormLabel>Estado (UF)</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecione o estado" /></SelectTrigger></FormControl><SelectContent>{brazilianStates.map((s) => (<SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>))}</SelectContent></Select></FormItem>)}/>
@@ -161,9 +216,11 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
             <FormField control={form.control} name="withEmail" render={({ field }) => (<FormItem className="flex items-center justify-between"><FormLabel>Com e-mail</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)}/>
           </div>
           <div className="flex space-x-4 pt-4">
-            <Button type="submit" className="bg-primary text-white" disabled={isSendingEmail}>Pesquisar</Button>
-            <Button type="button" variant="outline" disabled={isSendingEmail}>Salvar ou Compartilhar</Button>
-            <Button type="button" variant="outline" onClick={() => setShowEmailDialog(true)} disabled={isSendingEmail}>{isSendingEmail ? "Enviando..." : "Pesquisar e Enviar por E-mail"}</Button>
+            <Button type="submit" className="bg-primary text-white" disabled={isSearching || isSendingEmail}>
+              {isSearching ? "Pesquisando..." : "Pesquisar"}
+            </Button>
+            <Button type="button" variant="outline" disabled={isSearching || isSendingEmail}>Salvar ou Compartilhar</Button>
+            <Button type="button" variant="outline" onClick={() => setShowEmailDialog(true)} disabled={isSearching || isSendingEmail}>{isSendingEmail ? "Enviando..." : "Pesquisar e Enviar por E-mail"}</Button>
           </div>
         </form>
       </Form>
