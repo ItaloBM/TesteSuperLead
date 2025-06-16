@@ -2,7 +2,7 @@
 import { useState, useMemo } from "react";
 import { FileData } from "@/types/file";
 
-const ITEMS_PER_PAGE = 2; // Number of items to display per page
+const ITEMS_PER_PAGE = 25; // Number of items to display per page
 
 export const useFilePagination = (data: FileData[], searchFilter: string, searchTerm: string) => {
   const [currentPage, setCurrentPage] = useState(1);

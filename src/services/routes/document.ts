@@ -23,8 +23,15 @@ export const documentService = {
   },
 
   startCnpjQuery: async (payload: any) => {
-    const response = await api.post(`/cnpj-query?resultType=completo`, payload);
-    return response.data;
+    try {
+      const response = await api.post(`/cnpj-query?resultType=completo`, payload);
+      // ✅ GARANTE QUE OS DADOS DA RESPOSTA SEJAM RETORNADOS
+      return response.data; 
+    } catch (error) {
+      console.error("Erro na chamada da API 'startCnpjQuery':", error);
+      // Lança o erro para que o componente que chamou possa tratá-lo
+      throw error;
+    }
   },
 
   startCnpjQueryAndSendEmail: async (payload: any) => {

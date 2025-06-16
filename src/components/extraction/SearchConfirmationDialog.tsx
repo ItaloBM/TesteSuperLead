@@ -1,4 +1,3 @@
-
 import {
   AlertDialog,
   AlertDialogAction,
@@ -8,7 +7,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+} from "@/components/ui/alert-dialog"
+import { FC } from "react";
 
 interface SearchConfirmationDialogProps {
   isOpen: boolean;
@@ -16,18 +16,18 @@ interface SearchConfirmationDialogProps {
   onCancel: () => void;
 }
 
-export const SearchConfirmationDialog = ({
+export const SearchConfirmationDialog: FC<SearchConfirmationDialogProps> = ({
   isOpen,
   onConfirm,
   onCancel,
-}: SearchConfirmationDialogProps) => {
+}) => {
   return (
-    <AlertDialog open={isOpen}>
+    <AlertDialog open={isOpen} onOpenChange={onCancel}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Confirmar Busca</AlertDialogTitle>
           <AlertDialogDescription>
-            Você deseja realizar a busca e download dos dados com os filtros selecionados?
+            Esta operação pode consumir créditos do seu saldo. Deseja continuar?
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
