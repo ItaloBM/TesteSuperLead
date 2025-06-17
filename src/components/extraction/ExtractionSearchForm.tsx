@@ -47,49 +47,63 @@ interface ExtractionSearchFormProps {
 }
 
 const createApiPayload = (formData: ExtractionFormData) => {
-  const formatDateForApi = (date: Date | undefined) => date ? format(date, 'yyyy-MM-dd') : undefined;
-  const formatNumber = (value: string | undefined) => (value ? parseFloat(value.replace(',', '.')) : 0) || 0;
-  
-  const payload: any = {
-      busca_textual: formData.companyName ? [{
-          texto: [formData.companyName],
-          tipo_busca: "CONTEM", // Usando um valor padrão. Ajuste se a API exigir outro (ex: "TODOS")
-          razao_social: true,
-          nome_fantasia: true,
-          nome_socio: false 
-      }] : undefined,
-      codigo_atividade_principal: formData.mainActivity ? [formData.mainActivity] : undefined,
-      codigo_natureza_juridica: formData.legalNature ? [formData.legalNature] : undefined,
-      situacao_cadastral: formData.status ? [formData.status] : undefined,
-      uf: formData.state ? [formData.state] : undefined,
-      municipio: formData.city ? [formData.city] : undefined,
-      bairro: formData.neighborhood ? [formData.neighborhood] : undefined,
-      cep: formData.zipCode ? [formData.zipCode] : undefined,
-      ddd: formData.ddd ? [formData.ddd] : undefined,
-      data_abertura: { inicio: formatDateForApi(formData.openingDateFrom), fim: formatDateForApi(formData.openingDateTo) },
-      capital_social: { minimo: formatNumber(formData.capitalFrom), maximo: formatNumber(formData.capitalTo) },
-      mei: { optante: formData.onlyMei, excluir_optante: formData.excludeMei },
-      mais_filtros: {
-          somente_matriz: formData.onlyMatrix, somente_filial: formData.onlyBranch,
-          com_email: formData.withEmail, com_telefone: formData.withPhone,
-          somente_fixo: formData.onlyLandline, somente_celular: formData.onlyMobile,
-      },
-      limite: parseInt(formData.limit) || 50,
-      pagina: 0,
+  const payload: any = { pagina: 0 };
+
+  const addField = (field: keyof any, value: any) => {
+    if (value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0)) {
+      payload[field] = value;
+    }
   };
+
+  const formatNumber = (value: string | undefined) => value ? parseFloat(value.replace(',', '.')) : 0;
+  const formatDateForApi = (date: Date | undefined) => date ? format(date, 'yyyy-MM-dd') : undefined;
+
+  if (formData.companyName) {
+    addField('busca_textual', [{
+        texto: [formData.companyName],
+        tipo_busca: "CONTEM",
+        razao_social: true,
+        nome_fantasia: true,
+        nome_socio: false 
+    }]);
+  }
   
-  Object.keys(payload).forEach(key => {
-    const value = payload[key as keyof typeof payload];
-    if (value === undefined || value === null || value === '') {
-      delete payload[key as keyof typeof payload];
-    }
-    if (typeof value === 'object' && value !== null && !Array.isArray(value) && Object.keys(value).length === 0) {
-        delete payload[key as keyof typeof payload];
-    }
+  if(formData.mainActivity) addField('codigo_atividade_principal', [formData.mainActivity]);
+  if(formData.legalNature) addField('codigo_natureza_juridica', [formData.legalNature]);
+  if(formData.status) addField('situacao_cadastral', [formData.status]);
+  if(formData.state) addField('uf', [formData.state]);
+  if(formData.city) addField('municipio', [formData.city]);
+  if(formData.neighborhood) addField('bairro', [formData.neighborhood]);
+  if(formData.zipCode) addField('cep', [formData.zipCode]);
+  if(formData.ddd) addField('ddd', [formData.ddd]);
+
+  const data_abertura: any = {};
+  if(formData.openingDateFrom) data_abertura.inicio = formatDateForApi(formData.openingDateFrom);
+  if(formData.openingDateTo) data_abertura.fim = formatDateForApi(formData.openingDateTo);
+  if(Object.keys(data_abertura).length > 0) addField('data_abertura', data_abertura);
+  
+  const capital_social: any = {};
+  const minCapital = formatNumber(formData.capitalFrom);
+  const maxCapital = formatNumber(formData.capitalTo);
+  if(minCapital > 0) capital_social.minimo = minCapital;
+  if(maxCapital > 0) capital_social.maximo = maxCapital;
+  if(Object.keys(capital_social).length > 0) addField('capital_social', capital_social);
+
+  addField('mei', { optante: formData.onlyMei, excluir_optante: formData.excludeMei });
+  addField('mais_filtros', {
+      somente_matriz: formData.onlyMatrix, 
+      somente_filial: formData.onlyBranch,
+      com_email: formData.withEmail, 
+      com_telefone: formData.withPhone,
+      somente_fixo: formData.onlyLandline, 
+      somente_celular: formData.onlyMobile,
   });
+
+  addField('limite', parseInt(formData.limit) || 50);
 
   return payload;
 };
+
 
 const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSearchFormProps) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
