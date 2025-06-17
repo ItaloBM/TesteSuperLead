@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { format } from 'date-fns';
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -68,9 +68,7 @@ const createApiPayload = (formData: ExtractionFormData) => {
     }]);
   }
   
-  if(formData.mainActivity && formData.mainActivity.length > 0) {
-    addField('codigo_atividade_principal', formData.mainActivity);
-  }
+  if(formData.mainActivity && formData.mainActivity.length > 0) addField('codigo_atividade_principal', formData.mainActivity);
   if(formData.legalNature) addField('codigo_natureza_juridica', [formData.legalNature]);
   if(formData.status) addField('situacao_cadastral', [formData.status]);
   if(formData.state) addField('uf', [formData.state]);
@@ -270,11 +268,34 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
                       </Badge>
                     ))}
                   </div>
+                  <FormDescription>
+                    Não sabe o código?{" "}
+                    <a href="https://concla.ibge.gov.br/busca-online-cnae.html" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                      Consulte aqui
+                    </a>
+                  </FormDescription>
                 </FormItem>
               )}
             />
 
-            <FormField control={form.control} name="legalNature" render={({ field }) => ( <FormItem><FormLabel>Natureza Jurídica</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar naturezas..." fetchSuggestions={documentService.fetchNaturezaJuridicaSuggestions} /></FormControl></FormItem>)}/>
+            <FormField
+              control={form.control}
+              name="legalNature"
+              render={({ field }) => ( 
+                <FormItem>
+                  <FormLabel>Natureza Jurídica</FormLabel>
+                  <FormControl>
+                    <AutocompleteInput {...field} placeholder="Digite para buscar naturezas..." fetchSuggestions={documentService.fetchNaturezaJuridicaSuggestions} />
+                  </FormControl>
+                  <FormDescription>
+                    Não sabe o código?{" "}
+                    <a href="https://concla.ibge.gov.br/classificacoes/por-tema/organizacao-juridica/tabela-de-natureza-juridica.html" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                      Consulte aqui
+                    </a>
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
