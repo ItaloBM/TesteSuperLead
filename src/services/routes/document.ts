@@ -1,5 +1,10 @@
 import api from "../axios";
-import { CnpjDetails, Suggestion, BalanceResponse, ApiDocument } from "@/pages/admin/types";
+import { 
+  ApiDocument,
+  BalanceResponse,
+  CnpjDetails,
+  Suggestion 
+} from "@/pages/admin/types";
 
 export const documentService = {
   
@@ -8,9 +13,9 @@ export const documentService = {
     return response.data;
   },
 
-  startCnpjQuery: async (payload: any) => {
+  startCnpjQuery: async (payload: any, resultType: 'simples' | 'completo' = 'simples') => {
     try {
-      const response = await api.post(`/cnpj-query?resultType=completo`, payload);
+      const response = await api.post(`/cnpj-query?resultType=${resultType}`, payload);
       return response.data; 
     } catch (error) {
       console.error("Erro na chamada da API 'startCnpjQuery':", error);
@@ -18,9 +23,9 @@ export const documentService = {
     }
   },
 
-  startCnpjQueryAndSendEmail: async (payload: any) => {
+  startCnpjQueryAndSendEmail: async (payload: any, resultType: 'simples' | 'completo' = 'simples') => {
     try {
-      const response = await api.post('/cnpj-query/send-email', payload);
+      const response = await api.post(`/cnpj-query/send-email?resultType=${resultType}`, payload);
       return response.data;
     } catch(error) {
       console.error("Erro na chamada da API 'startCnpjQueryAndSendEmail':", error);
@@ -55,14 +60,27 @@ export const documentService = {
   fetchEmpresaSuggestions: async (query: string): Promise<Suggestion[]> => {
     if (!query) return [];
     try {
-      const response = await api.get(`/sugestoes/empresas`, { params: { q: query } });
-      return response.data;
+      // A chamada original para '/sugestoes/empresas' está comentada para evitar o erro 404.
+      // Você precisa substituir 'SUA_URL_DE_SUGESTOES' pela URL correta da sua API.
+      // const response = await api.get(`/SUA_URL_DE_SUGESTOES`, { params: { q: query } });
+      // return response.data;
+      
+      console.warn("A URL para sugestões de empresas não está configurada. Verifique 'fetchEmpresaSuggestions' em document.ts.");
+      return [];
+
     } catch (error) {
-      console.error("Erro ao buscar sugestões. Verifique a rota da API '/sugestoes/empresas'.", error);
+      console.error("Erro ao buscar sugestões. Verifique a rota da API.", error);
       return []; 
     }
   },
   
-  fetchCnaeSuggestions: async (query: string): Promise<Suggestion[]> => { return []; },
-  fetchNaturezaJuridicaSuggestions: async (query: string): Promise<Suggestion[]> => { return []; }
+  fetchCnaeSuggestions: async (query: string): Promise<Suggestion[]> => { 
+    console.warn("A URL para sugestões de CNAE não está configurada.");
+    return []; 
+  },
+
+  fetchNaturezaJuridicaSuggestions: async (query: string): Promise<Suggestion[]> => { 
+    console.warn("A URL para sugestões de Natureza Jurídica não está configurada.");
+    return []; 
+  }
 };
