@@ -183,13 +183,14 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
     }
   };
 
-  const handleConfirmEmailSend = async (details: { nome: string; enviar_para: string[] }) => {
+  const handleConfirmEmailSend = async (details: { nome: string; enviar_para: string[]; tipo: 'csv' | 'xlsx' }) => {
     setIsSendingEmail(true);
     const formData = form.getValues();
     const emailApiPayload = {
-      nome: details.nome,
-      enviar_para: details.enviar_para,
       total_linhas: parseInt(formData.limit) || 50,
+      nome: details.nome,
+      tipo: details.tipo,
+      enviar_para: details.enviar_para,
       pesquisa: createApiPayload(formData),
     };
 
