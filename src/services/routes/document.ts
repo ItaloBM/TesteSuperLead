@@ -1,19 +1,6 @@
 import api from "../axios";
+import { CnpjDetails, Suggestion, BalanceResponse, ApiDocument } from "@/pages/admin/types";
 
-// --- Interfaces ---
-interface Suggestion {
-  id: string;
-  nome: string;
-}
-interface BalanceResponse {
-  message: { total_balance: number; };
-}
-interface ApiDocument {
-  id: string; name: string; lastModified: string;
-  date: string; url: string; type: 'mei' | 'cnpj';
-}
-
-// --- Serviço Unificado ---
 export const documentService = {
   
   getBalance: async (): Promise<BalanceResponse> => {
@@ -21,14 +8,13 @@ export const documentService = {
     return response.data;
   },
 
-  // ✅ GARANTE QUE A RESPOSTA OU O ERRO SEJAM PROPAGADOS
   startCnpjQuery: async (payload: any) => {
     try {
       const response = await api.post(`/cnpj-query?resultType=completo`, payload);
       return response.data; 
     } catch (error) {
       console.error("Erro na chamada da API 'startCnpjQuery':", error);
-      throw error; // Lança o erro para o componente tratar
+      throw error;
     }
   },
 
@@ -41,8 +27,21 @@ export const documentService = {
       throw error;
     }
   },
+  
+  getSingleCnpjDetails: async (cnpj: string): Promise<CnpjDetails> => {
+    try {
+      const payload = { cnpj: [cnpj], limite: 1 };
+      const response = await api.post(`/cnpj-query?resultType=completo`, payload);
+      if (response.data && response.data.responseData && response.data.responseData.cnpjs && response.data.responseData.cnpjs.length > 0) {
+        return response.data.responseData.cnpjs[0];
+      }
+      throw new Error("CNPJ não encontrado ou resposta da API em formato inesperado.");
+    } catch (error) {
+      console.error(`Erro ao buscar detalhes para o CNPJ ${cnpj}:`, error);
+      throw error;
+    }
+  },
 
-  // Funções de sugestão e documentos com tratamento de erro para não quebrar a tela
   getUserDocuments: async (): Promise<ApiDocument[]> => {
     try {
       const response = await api.get('/user/documents'); 
@@ -64,6 +63,6 @@ export const documentService = {
     }
   },
   
-  fetchCnaeSuggestions: async (query: string): Promise<Suggestion[]> => { /* ... mesmo tratamento try/catch ... */ return []; },
-  fetchNaturezaJuridicaSuggestions: async (query: string): Promise<Suggestion[]> => { /* ... mesmo tratamento try/catch ... */ return []; }
+  fetchCnaeSuggestions: async (query: string): Promise<Suggestion[]> => { return []; },
+  fetchNaturezaJuridicaSuggestions: async (query: string): Promise<Suggestion[]> => { return []; }
 };

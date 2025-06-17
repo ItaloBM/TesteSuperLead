@@ -27,6 +27,7 @@ interface ExtractionFormData {
   capitalFrom: string; capitalTo: string;
   onlyMei: boolean; excludeMei: boolean; onlyMatrix: boolean; onlyBranch: boolean;
   withPhone: boolean; onlyLandline: boolean; onlyMobile: boolean; withEmail: boolean;
+  limit: string;
 }
 
 interface ExtractionSearchFormProps {
@@ -57,7 +58,7 @@ const createApiPayload = (formData: ExtractionFormData) => {
             com_email: formData.withEmail, com_telefone: formData.withPhone,
             somente_fixo: formData.onlyLandline, somente_celular: formData.onlyMobile,
         },
-        limite: 50, pagina: 0,
+        limite: parseInt(formData.limit), pagina: 0,
     };
     
     // Remove chaves com valor 'undefined' para não enviar dados desnecessários
@@ -85,6 +86,7 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
         openingDateFrom: undefined, openingDateTo: undefined,
         onlyMei: false, excludeMei: false, onlyMatrix: false, onlyBranch: false,
         withPhone: false, onlyLandline: false, onlyMobile: false, withEmail: false,
+        limit: "50"
     },
   });
 
@@ -174,11 +176,13 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
             <FormField control={form.control} name="onlyMobile" render={({ field }) => (<FormItem className="flex items-center justify-between"><FormLabel>Somente celular</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)}/>
             <FormField control={form.control} name="withEmail" render={({ field }) => (<FormItem className="flex items-center justify-between"><FormLabel>Com e-mail</FormLabel><FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl></FormItem>)}/>
           </div>
+          <div>
+            <FormField control={form.control} name="limit" render={({ field }) => (<FormItem className="max-w-xs"><FormLabel>Quantidade de registros: Por padrão 50</FormLabel><FormControl><Input type="number" min="1" placeholder="Ex: 50" {...field} /></FormControl></FormItem>)}></FormField>
+          </div>
           <div className="flex space-x-4 pt-4">
             <Button type="submit" className="bg-primary text-white" disabled={isSearching || isSendingEmail}>
               {isSearching ? "Pesquisando..." : "Pesquisar"}
             </Button>
-            <Button type="button" variant="outline" disabled={isSearching || isSendingEmail}>Salvar ou Compartilhar</Button>
             <Button type="button" variant="outline" onClick={() => setShowEmailDialog(true)} disabled={isSearching || isSendingEmail}>{isSendingEmail ? "Enviando..." : "Pesquisar e Enviar por E-mail"}</Button>
           </div>
         </form>

@@ -1,59 +1,57 @@
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
+import { documentService } from "@/services";
 import Header from "@/components/Header";
-import FileTable from "@/components/FileTable";
 import Footer from "@/components/Footer";
 import ExtractionSearchForm from "@/components/extraction/ExtractionSearchForm";
-import { FileData } from "@/types/file";
-import { CnpjDetailModal } from "@/components/extraction/CnpjDetailModal"; // ✅ Importa o novo modal
+import FileTable from "@/components/FileTable";
+import { CnpjDetailModal } from "@/components/extraction/CnpjDetailModal";
+import { FileData, CnpjDetails } from "@/pages/admin/types";
 
 const Index = () => {
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const { toast } = useToast();
   const [searchResults, setSearchResults] = useState<FileData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedCnpjDetails, setSelectedCnpjDetails] = useState<CnpjDetails | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  // ✅ Estados para controlar o modal
-  const [selectedCnpj, setSelectedCnpj] = useState<any | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleSearchCompleted = (results: any[]) => { // Recebe o array completo
+  const handleSearchCompleted = (results: FileData[]) => {
     setSearchResults(results);
   };
 
-  // ✅ Função para abrir o modal com os dados do CNPJ clicado
-  const handleRowClick = (cnpjData: any) => {
-    setSelectedCnpj(cnpjData);
-    setIsModalOpen(true);
+  const handleViewDetails = async (cnpjId: string) => {
+    setIsLoadingDetails(true);
+    setSelectedCnpjDetails(null);
+    setIsDetailModalOpen(true);
+    try {
+      const details = await documentService.getSingleCnpjDetails(cnpjId);
+      setSelectedCnpjDetails(details);
+    } catch (error) {
+      toast({
+        title: "Erro ao Carregar Detalhes",
+        description: "Não foi possível buscar as informações completas da empresa.",
+        variant: "destructive",
+      });
+      setIsDetailModalOpen(false);
+    } finally {
+      setIsLoadingDetails(false);
+    }
   };
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         <Header />
-        <div className="container mx-auto px-4 py-8">
-          
-          <ExtractionSearchForm 
-            onSearchCompleted={handleSearchCompleted} 
-            setIsLoading={setIsLoading} 
-          />
-          
+        <main className="flex-grow container mx-auto px-4 py-8">
+          <ExtractionSearchForm onSearchCompleted={handleSearchCompleted} setIsLoading={setIsLoading} />
           <div className="mt-8">
-            <FileTable 
-              data={searchResults} 
-              isLoading={isLoading} 
-              searchTerm={searchTerm}
-              onRowClick={handleRowClick} // ✅ Passa a função de clique para a tabela
-            />
+            <FileTable data={searchResults} isLoading={isLoading} searchTerm={""} onViewDetails={handleViewDetails} />
           </div>
-        </div>
+        </main>
         <Footer />
       </div>
-
-      {/* ✅ Renderiza o modal */}
-      <CnpjDetailModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        data={selectedCnpj}
-      />
+      <CnpjDetailModal isOpen={isDetailModalOpen} onClose={() => setIsDetailModalOpen(false)} data={selectedCnpjDetails} />
     </>
   );
 };

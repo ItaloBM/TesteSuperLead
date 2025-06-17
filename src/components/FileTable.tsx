@@ -11,25 +11,23 @@ import { useFilePagination } from "@/hooks/useFilePagination";
 import FileTableContent from "./files/FileTableContent";
 import FilePagination from "./files/FilePagination";
 import ResultsHeader from "./files/ResultsHeader";
-import { FileData } from "@/types/file"; // Importe o tipo FileData
+import { FileData } from "@/types/file";
 
-// ✅ 1. A tabela agora recebe 'data' e 'isLoading' como props
+// ✅ A interface de props agora inclui a função onViewDetails
 interface FileTableProps {
   data: FileData[];
   isLoading: boolean;
   searchTerm: string;
+  onViewDetails: (id: string) => void;
 }
 
-const FileTable: FC<FileTableProps> = ({ data, isLoading, searchTerm }) => {
+const FileTable: FC<FileTableProps> = ({ data, isLoading, searchTerm, onViewDetails }) => {
   const { user } = useAuth();
   const hasMeiAccess = user?.services?.includes('mei') || false;
   const hasCnpjAccess = user?.services?.includes('cnpj') || false;
-  
-  // ✅ 2. O hook 'useDocuments' foi removido daqui
 
-  // A paginação agora usa os dados recebidos via props
   const { paginatedData, filteredData, currentPage, totalPages, handlePageChange } = 
-    useFilePagination(data, "name", searchTerm); // "name" como filtro padrão, ajuste se necessário
+    useFilePagination(data, "name", searchTerm);
 
   return (
     <div className="w-full space-y-4">
@@ -51,6 +49,7 @@ const FileTable: FC<FileTableProps> = ({ data, isLoading, searchTerm }) => {
                 isLoading={isLoading}
                 hasMeiAccess={hasMeiAccess}
                 hasCnpjAccess={hasCnpjAccess}
+                onViewDetails={onViewDetails} // ✅ Passando a função para o componente filho
               />
             </TableBody>
           </Table>

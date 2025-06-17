@@ -1,3 +1,5 @@
+// ✅ ESTE ARQUIVO AGORA É A ÚNICA FONTE PARA OS TIPOS
+
 export interface User {
   id: string;
   name: string;
@@ -12,7 +14,6 @@ export interface User {
   isAdmin: boolean;
   createdAt: string;
   updatedAt: string;
-  // Keep backward compatibility fields
   cpf?: string;
   status?: string;
 }
@@ -76,4 +77,79 @@ export interface EmailTemplate {
   createdAt: string;
   updatedAt: string;
   __v: number;
+}
+
+export interface CnpjDetails {
+  cnpj: string;
+  razao_social: string;
+  nome_fantasia?: string;
+  matriz_filial: string;
+  data_abertura: string;
+  capital_social: number;
+  situacao_cadastral: {
+    situacao_atual: string;
+    motivo: string;
+    data: string;
+  };
+  porte: {
+    codigo: string;
+    descricao: string;
+  };
+  natureza_juridica: {
+    codigo: string;
+    descricao: string;
+  };
+  endereco: {
+    cep: string;
+    logradouro: string;
+    numero: string;
+    complemento?: string;
+    bairro: string;
+    uf: string;
+    municipio: string;
+  };
+  quadro_societario?: Array<{
+    nome: string;
+    qualificacao_socio: string;
+  }>;
+  atividade_principal: {
+    codigo: string;
+    descricao: string;
+  };
+  atividade_secundaria?: Array<{
+    codigo: string;
+    descricao: string;
+  }>;
+  contato_telefonico?: Array<{
+    completo: string;
+  }>;
+  [key:string]: any;
+}
+
+// Adicionando as interfaces que faltavam
+export interface Suggestion {
+  id: string;
+  nome: string;
+}
+
+export interface BalanceResponse {
+  message: { total_balance: number; };
+}
+
+export interface ApiDocument {
+  id: string; 
+  name: string; 
+  lastModified: string;
+  date: string; 
+  url: string; 
+  type: 'mei' | 'cnpj';
+}
+
+export interface FileData {
+  id: string;
+  name: string;
+  lastModified: string;
+  date: string;
+  url: string;
+  type: 'mei' | 'cnpj';
 }

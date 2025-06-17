@@ -1,6 +1,6 @@
-
 import { FC } from "react";
-import { Download, File } from "lucide-react";
+// ✅ Importamos o ícone de Olho e removemos o de Download
+import { Eye, File } from "lucide-react";
 import {
   TableCell,
   TableRow,
@@ -9,30 +9,22 @@ import { Button } from "@/components/ui/button";
 import { FileData } from "@/types/file";
 import { useToast } from "@/hooks/use-toast";
 
+// ✅ A interface agora espera a função onViewDetails
 interface FileTableContentProps {
   paginatedData: FileData[];
   isLoading: boolean;
   hasMeiAccess: boolean;
   hasCnpjAccess: boolean;
+  onViewDetails: (id: string) => void;
 }
 
 const FileTableContent: FC<FileTableContentProps> = ({
   paginatedData,
   isLoading,
   hasMeiAccess,
-  hasCnpjAccess
+  hasCnpjAccess,
+  onViewDetails, // ✅ Recebendo a função aqui
 }) => {
-  const { toast } = useToast();
-
-  const handleDownload = (file: FileData) => {
-    toast({
-      title: "Download iniciado",
-      description: `Baixando ${file.name}...`,
-    });
-    
-    // In a real scenario, we'd call the API
-    console.log(`Downloading ${file.name} from ${file.url}`);
-  };
 
   if (isLoading) {
     return (
@@ -73,10 +65,11 @@ const FileTableContent: FC<FileTableContentProps> = ({
                 variant="link"
                 size="sm"
                 className="text-xs text-primary pl-6 -mt-1 h-auto py-0 justify-start"
-                onClick={() => handleDownload(file)}
+                // ✅ A mágica acontece aqui! O onClick agora chama a função para abrir o modal
+                onClick={() => onViewDetails(file.id)}
               >
-                <Download className="h-3 w-3 mr-1" />
-                baixar arquivo
+                <Eye className="h-3 w-3 mr-1" /> {/* ✅ Ícone novo */}
+                Visualizar Detalhes {/* ✅ Texto novo */}
               </Button>
             </div>
           </TableCell>

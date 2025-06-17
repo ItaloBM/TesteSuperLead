@@ -10,7 +10,7 @@ export const useFilePagination = (data: FileData[], searchFilter: string, search
   // Filter data based on search criteria
   const filteredData = useMemo(() => {
     if (!searchTerm) return data;
-    
+
     const searchLower = searchTerm.toLowerCase();
     return data.filter((file) => {
       switch (searchFilter) {

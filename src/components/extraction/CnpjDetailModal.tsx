@@ -1,3 +1,4 @@
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,44 +9,54 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
-// Define uma interface para os dados completos do CNPJ que virão da API
+// A interface pode ser importada de um arquivo de tipos compartilhado no futuro
 interface CnpjDetails {
+  cnpj: string;
   razao_social: string;
   nome_fantasia?: string;
-  cnpj: string;
-  situacao_cadastral: string;
+  matriz_filial: string;
   data_abertura: string;
-  capital_social?: number;
-  natureza_juridica: {
-    id: string;
-    descricao: string;
+  capital_social: number;
+  situacao_cadastral: {
+    situacao_atual: string;
+    motivo: string;
+    data: string;
   };
   porte: {
-    id: string;
+    codigo: string;
+    descricao: string;
+  };
+  natureza_juridica: {
+    codigo: string;
     descricao: string;
   };
   endereco: {
+    cep: string;
     logradouro: string;
     numero: string;
     complemento?: string;
     bairro: string;
-    cep: string;
-    municipio: {
-      id: string;
-      nome: string;
-    };
     uf: string;
+    municipio: string;
   };
-  qsa?: Array<{
-    nome_socio: string;
-    qualificacao_socio: {
-        id: string;
-        descricao: string;
-    };
+  quadro_societario?: Array<{
+    nome: string;
+    qualificacao_socio: string;
   }>;
-  // Adicione outros campos que você espera receber da API
-  [key: string]: any;
+  atividade_principal: {
+    codigo: string;
+    descricao: string;
+  };
+  atividade_secundaria?: Array<{
+    codigo: string;
+    descricao: string;
+  }>;
+  contato_telefonico?: Array<{
+    completo: string;
+  }>
+  [key:string]: any;
 }
+
 
 interface CnpjDetailModalProps {
   isOpen: boolean;
@@ -53,22 +64,26 @@ interface CnpjDetailModalProps {
   data: CnpjDetails | null;
 }
 
-// Componente para renderizar uma linha de informação no modal
-const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-  <div className="py-2 px-3 hover:bg-gray-50 rounded-md">
-    <p className="text-xs text-gray-500">{label}</p>
-    <p className="text-sm text-gray-800 font-medium">{value || '-'}</p>
-  </div>
-);
+// Componente auxiliar para renderizar as informações de forma limpa
+const InfoRow = ({ label, value }: { label: string; value?: React.ReactNode }) => {
+  if (!value) return null; // Não renderiza se o valor for nulo ou vazio
+  return (
+    <div className="py-2 px-3 hover:bg-gray-50 rounded-md break-words">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="text-sm text-gray-800 font-medium">{value}</p>
+    </div>
+  );
+};
+
 
 export const CnpjDetailModal: React.FC<CnpjDetailModalProps> = ({ isOpen, onClose, data }) => {
-  if (!data) return null;
+  if (!data) return null; // Guarda de segurança, não renderiza o modal sem dados
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl text-superlead-pro">
+          <DialogTitle className="text-xl">
             {data.razao_social}
           </DialogTitle>
           <DialogDescription>
@@ -76,36 +91,51 @@ export const CnpjDetailModal: React.FC<CnpjDetailModalProps> = ({ isOpen, onClos
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-            <InfoRow label="CNPJ" value={data.cnpj} />
-            <InfoRow label="Situação Cadastral" value={data.situacao_cadastral} />
-            <InfoRow label="Data de Abertura" value={new Date(data.data_abertura).toLocaleDateString('pt-BR')} />
-            <InfoRow label="Nome Fantasia" value={data.nome_fantasia} />
-            <InfoRow label="Natureza Jurídica" value={data.natureza_juridica?.descricao} />
-            <InfoRow label="Porte" value={data.porte?.descricao} />
-            <InfoRow label="Capital Social" value={data.capital_social?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
+        {/* Seção de Informações Gerais */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2 mt-4 border-b pb-4">
+          <InfoRow label="Nome Fantasia" value={data.nome_fantasia} />
+          <InfoRow label="Situação Cadastral" value={data.situacao_cadastral?.situacao_atual} />
+          <InfoRow label="Data de Abertura" value={new Date(data.data_abertura).toLocaleDateString('pt-BR')} />
+          <InfoRow label="Porte" value={data.porte?.descricao} />
+          <InfoRow label="Natureza Jurídica" value={data.natureza_juridica?.descricao} />
+          <InfoRow label="Capital Social" value={data.capital_social?.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} />
         </div>
 
-        <div className="mt-4">
+        {/* Seção de Endereço */}
+        <div className="mt-4 border-b pb-4">
             <h3 className="font-semibold text-gray-700 mb-2 px-3">Endereço</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 border rounded-lg p-2">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-2">
                 <InfoRow label="Logradouro" value={`${data.endereco?.logradouro}, ${data.endereco?.numero}`} />
                 <InfoRow label="Complemento" value={data.endereco?.complemento} />
                 <InfoRow label="Bairro" value={data.endereco?.bairro} />
-                <InfoRow label="Município" value={data.endereco?.municipio?.nome} />
-                <InfoRow label="UF" value={data.endereco?.uf} />
+                <InfoRow label="Município / UF" value={`${data.endereco?.municipio} / ${data.endereco?.uf}`} />
                 <InfoRow label="CEP" value={data.endereco?.cep} />
             </div>
         </div>
 
-        {data.qsa && data.qsa.length > 0 && (
+        {/* Seção de Atividades */}
+        <div className="mt-4 border-b pb-4">
+             <h3 className="font-semibold text-gray-700 mb-2 px-3">Atividades</h3>
+             <InfoRow label="Atividade Principal (CNAE)" value={data.atividade_principal?.descricao} />
+             {data.atividade_secundaria && data.atividade_secundaria.length > 0 && (
+                <div className="mt-2">
+                    <p className="text-xs text-gray-500 px-3">Atividades Secundárias</p>
+                    <ul className="list-disc list-inside px-3">
+                        {data.atividade_secundaria.map(ativ => <li key={ativ.codigo} className="text-sm">{ativ.descricao}</li>)}
+                    </ul>
+                </div>
+             )}
+        </div>
+
+        {/* Seção de Quadro Societário (QSA) */}
+        {data.quadro_societario && data.quadro_societario.length > 0 && (
             <div className="mt-4">
                 <h3 className="font-semibold text-gray-700 mb-2 px-3">Quadro de Sócios e Administradores (QSA)</h3>
-                <div className="border rounded-lg p-2 space-y-2">
-                    {data.qsa.map((socio, index) => (
-                        <div key={index} className="p-2 bg-gray-50 rounded-md">
-                           <p className="text-sm text-gray-800 font-medium">{socio.nome_socio}</p>
-                           <p className="text-xs text-gray-500">{socio.qualificacao_socio.descricao}</p>
+                <div className="space-y-2">
+                    {data.quadro_societario.map((socio, index) => (
+                        <div key={index} className="p-3 bg-gray-50 rounded-md">
+                           <p className="text-sm text-gray-800 font-medium">{socio.nome}</p>
+                           <p className="text-xs text-gray-500">{socio.qualificacao_socio}</p>
                         </div>
                     ))}
                 </div>
@@ -114,7 +144,7 @@ export const CnpjDetailModal: React.FC<CnpjDetailModalProps> = ({ isOpen, onClos
         
         <div className="flex justify-end mt-6">
             <DialogClose asChild>
-                <Button variant="outline">Fechar</Button>
+                <Button type="button" variant="outline">Fechar</Button>
             </DialogClose>
         </div>
       </DialogContent>
