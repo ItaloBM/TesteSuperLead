@@ -6,6 +6,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
+import { X as CloseIcon } from 'lucide-react';
 import { DatePicker } from "./DatePicker";
 import { SearchConfirmationDialog } from "./SearchConfirmationDialog";
 import { SendEmailDialog } from "./SendEmailDialog";
@@ -18,7 +20,7 @@ import { FileData } from "@/pages/admin/types";
 interface ExtractionFormData {
   resultType: 'simples' | 'completo';
   companyName: string;
-  mainActivity: string;
+  mainActivity: string[];
   legalNature: string;
   status: string;
   state: string;
@@ -48,13 +50,11 @@ interface ExtractionSearchFormProps {
 
 const createApiPayload = (formData: ExtractionFormData) => {
   const payload: any = { pagina: 0 };
-
   const addField = (field: keyof any, value: any) => {
     if (value !== undefined && value !== null && value !== '' && !(Array.isArray(value) && value.length === 0)) {
       payload[field] = value;
     }
   };
-
   const formatNumber = (value: string | undefined) => value ? parseFloat(value.replace(',', '.')) : 0;
   const formatDateForApi = (date: Date | undefined) => date ? format(date, 'yyyy-MM-dd') : undefined;
 
@@ -68,7 +68,9 @@ const createApiPayload = (formData: ExtractionFormData) => {
     }]);
   }
   
-  if(formData.mainActivity) addField('codigo_atividade_principal', [formData.mainActivity]);
+  if(formData.mainActivity && formData.mainActivity.length > 0) {
+    addField('codigo_atividade_principal', formData.mainActivity);
+  }
   if(formData.legalNature) addField('codigo_natureza_juridica', [formData.legalNature]);
   if(formData.status) addField('situacao_cadastral', [formData.status]);
   if(formData.state) addField('uf', [formData.state]);
@@ -104,26 +106,54 @@ const createApiPayload = (formData: ExtractionFormData) => {
   return payload;
 };
 
-
 const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSearchFormProps) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [currentCnae, setCurrentCnae] = useState("");
   const { toast } = useToast();
 
   const form = useForm<ExtractionFormData>({
     defaultValues: {
       resultType: "simples",
-      companyName: "", mainActivity: "", legalNature: "", status: "",
-      state: "", city: "", neighborhood: "", zipCode: "", ddd: "",
-      capitalFrom: "", capitalTo: "",
-      openingDateFrom: undefined, openingDateTo: undefined,
-      onlyMei: false, excludeMei: false, onlyMatrix: false, onlyBranch: false,
-      withPhone: false, onlyLandline: false, onlyMobile: false, withEmail: false,
+      companyName: "",
+      mainActivity: [],
+      legalNature: "",
+      status: "",
+      state: "",
+      city: "",
+      neighborhood: "",
+      zipCode: "",
+      ddd: "",
+      capitalFrom: "",
+      capitalTo: "",
+      openingDateFrom: undefined,
+      openingDateTo: undefined,
+      onlyMei: false,
+      excludeMei: false,
+      onlyMatrix: false,
+      onlyBranch: false,
+      withPhone: false,
+      onlyLandline: false,
+      onlyMobile: false,
+      withEmail: false,
       limit: "50"
     },
   });
+
+  const handleAddCnae = () => {
+    const currentCnaes = form.getValues("mainActivity");
+    if (currentCnae && !currentCnaes.includes(currentCnae)) {
+      form.setValue("mainActivity", [...currentCnaes, currentCnae]);
+      setCurrentCnae("");
+    }
+  };
+
+  const handleRemoveCnae = (cnaeToRemove: string) => {
+    const currentCnaes = form.getValues("mainActivity");
+    form.setValue("mainActivity", currentCnaes.filter(cnae => cnae !== cnaeToRemove));
+  };
 
   const handleConfirmSearch = async () => {
     setShowConfirmDialog(false);
@@ -210,7 +240,40 @@ const ExtractionSearchForm = ({ onSearchCompleted, setIsLoading }: ExtractionSea
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormField control={form.control} name="companyName" render={({ field }) => (<FormItem><FormLabel>Razão Social ou Nome Fantasia</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar empresas..." fetchSuggestions={documentService.fetchEmpresaSuggestions} /></FormControl></FormItem>)}/>
-            <FormField control={form.control} name="mainActivity" render={({ field }) => (<FormItem><FormLabel>Atividade Principal (CNAE)</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar atividades..." fetchSuggestions={documentService.fetchCnaeSuggestions} /></FormControl></FormItem>)}/>
+            
+            <FormField
+              control={form.control}
+              name="mainActivity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Atividades Principais (CNAE)</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <AutocompleteInput
+                      placeholder="Digite para buscar atividades..."
+                      fetchSuggestions={documentService.fetchCnaeSuggestions}
+                      value={currentCnae}
+                      onChange={(value) => setCurrentCnae(value)}
+                    />
+                    <Button type="button" onClick={handleAddCnae}>Adicionar</Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-2 min-h-[2.5rem]">
+                    {field.value.map((cnae) => (
+                      <Badge key={cnae} variant="secondary">
+                        {cnae}
+                        <button
+                          type="button"
+                          className="ml-2 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                          onClick={() => handleRemoveCnae(cnae)}
+                        >
+                          <CloseIcon className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </FormItem>
+              )}
+            />
+
             <FormField control={form.control} name="legalNature" render={({ field }) => ( <FormItem><FormLabel>Natureza Jurídica</FormLabel><FormControl><AutocompleteInput {...field} placeholder="Digite para buscar naturezas..." fetchSuggestions={documentService.fetchNaturezaJuridicaSuggestions} /></FormControl></FormItem>)}/>
           </div>
           
