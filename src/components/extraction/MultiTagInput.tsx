@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { X as CloseIcon } from 'lucide-react';
+import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { X as CloseIcon } from "lucide-react";
 
 interface MultiTagInputProps {
   value: string[];
@@ -10,23 +10,27 @@ interface MultiTagInputProps {
   placeholder?: string;
 }
 
-const MultiTagInput: React.FC<MultiTagInputProps> = ({ value = [], onChange, placeholder }) => {
-  const [inputValue, setInputValue] = useState('');
+const MultiTagInput: React.FC<MultiTagInputProps> = ({
+  value = [],
+  onChange,
+  placeholder,
+}) => {
+  const [inputValue, setInputValue] = useState("");
 
   const handleAddItem = () => {
     const trimmedValue = inputValue.trim();
     if (trimmedValue && !value.includes(trimmedValue)) {
       onChange([...value, trimmedValue]);
-      setInputValue('');
+      setInputValue("");
     }
   };
 
   const handleRemoveItem = (itemToRemove: string) => {
-    onChange(value.filter(item => item !== itemToRemove));
+    onChange(value.filter((item) => item !== itemToRemove));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === "Enter") {
       e.preventDefault();
       handleAddItem();
     }
@@ -47,7 +51,11 @@ const MultiTagInput: React.FC<MultiTagInputProps> = ({ value = [], onChange, pla
       </div>
       <div className="flex flex-wrap gap-1 pt-1">
         {value.map((item) => (
-          <Badge key={item} variant="secondary" className="flex items-center gap-1.5">
+          <Badge
+            key={item}
+            variant="secondary"
+            className="flex items-center gap-1.5"
+          >
             <span>{item}</span>
             <button
               type="button"

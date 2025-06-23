@@ -1,20 +1,9 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import api, { setBaseUrl } from "@/services/axios";
-import { authService, documentService } from "@/services"; // Agora a importação funcionará corretamente
-
-interface User {
-  name: string;
-  email: string;
-  isAdmin: boolean;
-  cpfOrCnpj: string;
-  plan: string;
-  maxQueries: number;
-  apiKey: string;
-  permission_admin?: boolean;
-  services?: string[];
-}
+import { authService, documentService } from "@/services";
+import { User } from "@/pages/admin/types";
 
 interface AuthContextType {
   user: User | null;
@@ -41,10 +30,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.setItem('api_url', url);
     setBaseUrl(url);
   };
-
-  const fetchBalance = async () => {
-    if (!localStorage.getItem("user") && !user) return; 
-
+  
+  const fetchBalance = useCallback(async () => {
     try {
       const response = await documentService.getBalance();
       setBalance(response.message.total_balance);
@@ -53,60 +40,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast.error("Não foi possível carregar seu saldo.");
       setBalance(0);
     }
-  };
-
-  useEffect(() => {
-    const init = async () => {
-      const savedApiUrl = localStorage.getItem('api_url');
-      if (savedApiUrl) {
-        setBaseUrl(savedApiUrl);
-      }
-      try {
-        const { authenticated, user: sessionUser } = await authService.checkAuth();
-        if (authenticated && sessionUser) {
-          setUser(sessionUser);
-          await fetchBalance();
-        } else {
-          const storedUser = localStorage.getItem("user");
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
-            await fetchBalance();
-          }
-        }
-      } catch (err) {
-        console.error("Auth initialization error:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    init();
   }, []);
+
+  const handleAuthenticationSuccess = useCallback(async (userData: User) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    await fetchBalance();
+    
+    if (userData.isAdmin) {
+      navigate("/admin");
+    } else {
+      navigate("/dashboard");
+    }
+  }, [navigate, fetchBalance]);
+
+  // ✅ LÓGICA DE INICIALIZAÇÃO FINAL
+  useEffect(() => {
+    const initAuth = async () => {
+      const savedApiUrl = localStorage.getItem('api_url');
+      if (savedApiUrl) setBaseUrl(savedApiUrl);
+      
+      // Passo 1: Verifica se há um utilizador guardado localmente como "pista".
+      const storedUser = localStorage.getItem('user');
+
+      if (storedUser) {
+        // Passo 2: Se houver, SÓ ENTÃO tenta validar a sessão com a API.
+        try {
+          const { authenticated, user: sessionUser } = await authService.checkAuth();
+          if (authenticated && sessionUser) {
+            setUser(sessionUser);
+            await fetchBalance();
+          } else {
+            // Se o utilizador local for inválido (sessão expirou na API), limpa.
+            localStorage.clear();
+          }
+        } catch (err) {
+          console.error("Sessão local encontrada, mas falhou ao validar na API. Limpando.", err);
+          localStorage.clear();
+        }
+      }
+      
+      // Passo 3: Finaliza o loading. Se não havia utilizador, nenhuma chamada à API foi feita.
+      setIsLoading(false);
+    };
+    
+    initAuth();
+  }, [fetchBalance]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      await authService.login(email, password);
-      const sessionData = await authService.checkAuth();
-      const userData: User = sessionData.user;
-      
-      setUser(userData);
-      localStorage.setItem("user", JSON.stringify(userData));
-
-      await fetchBalance();
-      
-      toast.success("Autenticação realizada com sucesso!");
-      
-      if (userData.isAdmin || userData.permission_admin) {
-        navigate("/admin");
+      const loginResponse = await authService.login(email, password);
+      if (loginResponse.authenticated) {
+        const sessionData = await authService.checkAuth();
+        if (sessionData.authenticated && sessionData.user) {
+          toast.success("Autenticação realizada com sucesso!");
+          await handleAuthenticationSuccess(sessionData.user);
+        } else {
+          throw new Error("Sessão não pôde ser verificada após o login.");
+        }
       } else {
-        navigate("/dashboard");
+        throw new Error(loginResponse.message || "Falha na autenticação.");
       }
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message || "Credenciais inválidas. Verifique seu email e senha.";
+      const errorMessage = err.response?.data?.error || "Credenciais inválidas tente novamente.";
       setError(errorMessage);
       toast.error(errorMessage);
-      console.error("Login error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -117,11 +117,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await authService.logout();
     } catch(error) {
-      console.error("Logout API call failed, logging out client-side anyway.", error);
+      console.error("API de logout falhou, desconectando do lado do cliente.", error);
     } finally {
       setUser(null);
       setBalance(null);
       localStorage.clear();
+      delete api.defaults.headers.common['Authorization'];
       toast.success("Você foi desconectado com sucesso!");
       navigate("/login");
       setIsLoading(false);
@@ -130,17 +131,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{
-        user,
-        isAuthenticated: !!user,
-        isLoading,
-        balance,
-        fetchBalance,
-        login,
-        logout,
-        error,
-        setApiUrl
-      }}
+      value={{ user, isAuthenticated: !!user, isLoading, balance, fetchBalance, login, logout, error, setApiUrl }}
     >
       {children}
     </AuthContext.Provider>
