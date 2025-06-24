@@ -81,10 +81,10 @@ const createApiPayload = (formData: ExtractionFormData) => {
     addField("busca_textual", [
       {
         texto: [formData.companyName],
-        tipo_busca: "CONTEM",
+        tipo_busca: "exata",
         razao_social: true,
         nome_fantasia: true,
-        nome_socio: false,
+        nome_socio: true,
       },
     ]);
   }

@@ -1,5 +1,3 @@
-// ✅ ESTE ARQUIVO AGORA É A ÚNICA FONTE PARA OS TIPOS
-
 export interface User {
   id: string;
   name: string;
@@ -91,14 +89,15 @@ export interface CnpjDetails {
     motivo: string;
     data: string;
   };
-  porte: {
+  porte_empresa: { // Corrigido de 'porte' para 'porte_empresa' para corresponder à API
     codigo: string;
     descricao: string;
   };
-  natureza_juridica: {
+  natureza_juridica: { // Nome atualizado
     codigo: string;
     descricao: string;
   };
+  descricao_natureza_juridica: string; // Campo adicional da API
   endereco: {
     cep: string;
     logradouro: string;
@@ -122,7 +121,23 @@ export interface CnpjDetails {
   }>;
   contato_telefonico?: Array<{
     completo: string;
+    ddd: string;
+    numero: string;
+    tipo: string;
   }>;
+  contato_email?: Array<{
+    email: string;
+    dominio: string;
+    valido: boolean;
+  }>;
+  simples?: {
+    optante: boolean;
+    data_opcao_simples: string | null;
+    data_exclusao_simples: string | null;
+  };
+  mei?: {
+    optante: boolean;
+  }
   [key:string]: any;
 }
 

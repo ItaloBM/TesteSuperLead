@@ -1,10 +1,6 @@
-
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Users, Globe, List, Menu, PhoneCall, Mail } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
+import { Users, Globe, List, Menu, PhoneCall, Mail, Search } from "lucide-react";
+import { toast } from "sonner";
 
 interface SidebarProps {
   isMenuOpen: boolean;
@@ -15,7 +11,6 @@ interface SidebarProps {
 
 const Sidebar = ({ isMenuOpen, toggleMenu, currentView, setCurrentView }: SidebarProps) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   return (
     <div className="h-full flex flex-col bg-white">
@@ -76,6 +71,14 @@ const Sidebar = ({ isMenuOpen, toggleMenu, currentView, setCurrentView }: Sideba
           >
             <Mail className="h-5 w-5" />
             Templates de Email
+          </button>
+
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-600 text-sm transition-colors hover:bg-primary/5 rounded-md"
+          >
+            <Search className="h-5 w-5" />
+            DashBoard de Pesquisa
           </button>
         </nav>
       </div>
